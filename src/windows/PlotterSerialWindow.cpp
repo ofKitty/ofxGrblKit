@@ -1,4 +1,4 @@
-#include "SerialWindow.h"
+#include "PlotterSerialWindow.h"
 
 #include "imgui.h"
 #include "ofMain.h"
