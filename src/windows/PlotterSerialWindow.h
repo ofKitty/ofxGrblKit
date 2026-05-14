@@ -30,10 +30,16 @@ public:
     /// Match Combo index to prefs serialDevicePath after refresh.
     void syncSelectionFromPrefs();
 
+    /// ImGui window title passed to ImGui::Begin, including any `###id` suffix
+    /// required for docking (must match ofxKit registerWindow id). Empty uses name().
+    void setImguiWindowTitle(std::string title) { imguiWindowTitle_ = std::move(title); }
+
 private:
     void savePrefs();
+    void ensureSelectedPortInRange();
 
     std::string name_ {"Serial / Machine"};
+    std::string imguiWindowTitle_;
     bool visible_ {true};
 
     grbl::GrblSender* sender_ {nullptr};

@@ -13,6 +13,17 @@ const int PlotterSerialWindow::kBaudPresets[] = {
 
 PlotterSerialWindow::PlotterSerialWindow() = default;
 
+void PlotterSerialWindow::ensureSelectedPortInRange()
+{
+    if (deviceList_.empty()) {
+        selectedPort_ = 0;
+        return;
+    }
+    if (selectedPort_ < 0 || selectedPort_ >= static_cast<int>(deviceList_.size())) {
+        selectedPort_ = 0;
+    }
+}
+
 void PlotterSerialWindow::refreshDeviceList()
 {
     ofSerial tmp;
@@ -34,6 +45,8 @@ void PlotterSerialWindow::refreshDeviceList()
         [&](ofSerialDeviceInfo a, ofSerialDeviceInfo b) {
             return rank(a.getDevicePath()) < rank(b.getDevicePath());
         });
+
+    ensureSelectedPortInRange();
 }
 
 void PlotterSerialWindow::syncSelectionFromPrefs()
@@ -47,6 +60,7 @@ void PlotterSerialWindow::syncSelectionFromPrefs()
             break;
         }
     }
+    ensureSelectedPortInRange();
 }
 
 void PlotterSerialWindow::savePrefs()
@@ -73,7 +87,9 @@ void PlotterSerialWindow::draw(bool& visible)
 
     ImGui::SetNextWindowSize(ImVec2(340, 420), ImGuiCond_FirstUseEver);
 
-    if (ImGui::Begin(name_.c_str(), &visible)) {
+    const char* winTitle =
+        imguiWindowTitle_.empty() ? name_.c_str() : imguiWindowTitle_.c_str();
+    if (ImGui::Begin(winTitle, &visible)) {
         if (ImGui::CollapsingHeader("USB serial", ImGuiTreeNodeFlags_DefaultOpen)) {
             if (ImGui::SmallButton("Refresh ports")) {
                 refreshDeviceList();
@@ -91,10 +107,15 @@ void PlotterSerialWindow::draw(bool& visible)
             if (deviceList_.empty()) {
                 ImGui::TextDisabled("No serial ports found");
             } else {
+                ensureSelectedPortInRange();
+                // getDeviceName() returns std::string by value — keep copies alive while Combo uses c_str().
+                std::vector<std::string> labels;
+                labels.reserve(deviceList_.size());
                 std::vector<const char*> names;
                 names.reserve(deviceList_.size());
                 for (auto& d : deviceList_) {
-                    names.push_back(d.getDeviceName().c_str());
+                    labels.push_back(d.getDeviceName());
+                    names.push_back(labels.back().c_str());
                 }
                 ImGui::Combo("Port", &selectedPort_, names.data(), (int)names.size());
             }
